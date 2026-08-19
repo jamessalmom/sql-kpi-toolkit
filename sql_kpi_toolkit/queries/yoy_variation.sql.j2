@@ -1,0 +1,26 @@
+-- Year-over-year variation using a self-referencing CTE (no self-join needed).
+WITH yearly AS (
+    SELECT
+        {% if group_by_column %}{{ group_by_column }} AS group_key,{% endif %}
+        EXTRACT(YEAR FROM {{ date_column }}) AS year,
+        SUM({{ amount_column }}) AS total_amount
+    FROM {{ table }}
+    GROUP BY {% if group_by_column %}{{ group_by_column }}, {% endif %}EXTRACT(YEAR FROM {{ date_column }})
+)
+SELECT
+    {% if group_by_column %}group_key,{% endif %}
+    year,
+    total_amount,
+    LAG(total_amount) OVER (
+        {% if group_by_column %}PARTITION BY group_key {% endif %}ORDER BY year
+    ) AS previous_year_amount,
+    ROUND(
+        100.0 * (total_amount - LAG(total_amount) OVER (
+            {% if group_by_column %}PARTITION BY group_key {% endif %}ORDER BY year
+        )) / NULLIF(LAG(total_amount) OVER (
+            {% if group_by_column %}PARTITION BY group_key {% endif %}ORDER BY year
+        ), 0),
+        2
+    ) AS yoy_variation_pct
+FROM yearly
+ORDER BY {% if group_by_column %}group_key, {% endif %}year;

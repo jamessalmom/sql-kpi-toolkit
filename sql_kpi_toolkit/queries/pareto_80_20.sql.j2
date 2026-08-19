@@ -1,0 +1,25 @@
+-- Pareto 80/20 client concentration: cumulative revenue share per client.
+WITH client_revenue AS (
+    SELECT
+        {{ client_column }} AS client_id,
+        SUM({{ amount_column }}) AS total_revenue
+    FROM {{ table }}
+    WHERE {{ date_column }} BETWEEN :period_start AND :period_end
+    GROUP BY {{ client_column }}
+),
+ranked AS (
+    SELECT
+        client_id,
+        total_revenue,
+        SUM(total_revenue) OVER (ORDER BY total_revenue DESC) AS running_total,
+        SUM(total_revenue) OVER () AS grand_total,
+        ROW_NUMBER() OVER (ORDER BY total_revenue DESC) AS rank_position
+    FROM client_revenue
+)
+SELECT
+    client_id,
+    total_revenue,
+    ROUND(100.0 * running_total / NULLIF(grand_total, 0), 2) AS cumulative_share_pct,
+    rank_position
+FROM ranked
+ORDER BY rank_position;

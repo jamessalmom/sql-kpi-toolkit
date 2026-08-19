@@ -1,0 +1,21 @@
+-- Goal attainment per unit/consultant against a target table.
+SELECT
+    actual.{{ entity_column }} AS entity,
+    actual.total_amount,
+    target.goal_amount,
+    ROUND(100.0 * actual.total_amount / NULLIF(target.goal_amount, 0), 2) AS attainment_pct,
+    CASE
+        WHEN actual.total_amount >= target.goal_amount THEN 'achieved'
+        WHEN actual.total_amount >= target.goal_amount * 0.8 THEN 'near_target'
+        ELSE 'below_target'
+    END AS status
+FROM (
+    SELECT {{ entity_column }}, SUM({{ amount_column }}) AS total_amount
+    FROM {{ actuals_table }}
+    WHERE {{ date_column }} BETWEEN :period_start AND :period_end
+    GROUP BY {{ entity_column }}
+) AS actual
+JOIN {{ goals_table }} AS target
+    ON target.{{ entity_column }} = actual.{{ entity_column }}
+   AND target.period = :period_label
+ORDER BY attainment_pct DESC;
