@@ -1,21 +1,12 @@
 # sql-kpi-toolkit
 
-Parameterized, Jinja2-templated SQL for KPIs that show up in almost every
-commercial/financial dashboard: **Pareto 80/20** client concentration,
-**year-over-year variation**, and **goal attainment** by unit or
-consultant. Targets Postgres-style SQL (window functions, CTEs) but reads
-close enough to ANSI SQL to adapt to SQL Server / MySQL with minor tweaks.
+Jinja2 templates for three SQL calculations that show up in almost every commercial or financial dashboard: Pareto 80/20 client concentration, year-over-year variation and goal attainment per unit or consultant. The SQL is written for PostgreSQL (window functions and CTEs) and needs only small changes for SQL Server or MySQL.
 
-Extracted from KPI engines built for executive BI portals (Chart.js /
-Power BI dashboards) where the same three calculations kept getting
-rewritten per project.
+I kept rewriting these three queries for each new BI portal, with different table and column names every time. The templates only parameterize those names; the query logic stays the same.
 
 ## Why templates instead of an ORM
 
-These are analytical, window-function-heavy queries — exactly the case
-where hand-written SQL beats an ORM's query builder. Templating just
-parameterizes table/column names so the same battle-tested query works
-across schemas without copy-pasting and re-editing SQL by hand.
+These are analytical queries built on window functions, which is where hand-written SQL is clearer than an ORM query builder. Templating keeps one version of each query that works across schemas.
 
 ## Usage
 
@@ -29,8 +20,8 @@ sql = render_query(
     amount_column="amount",
     date_column="sold_at",
 )
-# sql is plain SQL text with named params (:period_start, :period_end)
-# ready to run through your driver of choice (psycopg2, SQLAlchemy, pyodbc, ...)
+# plain SQL with named params (:period_start, :period_end),
+# ready for psycopg2, SQLAlchemy, pyodbc or any other driver
 ```
 
 ## Included templates
@@ -52,4 +43,4 @@ ruff check .
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT, see [LICENSE](LICENSE).
